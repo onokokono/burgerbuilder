@@ -3,7 +3,11 @@ import Button from '../../../components/UI/Button/Button';
 import css from './ContactInformation.module.css';
 import axios from '../../../axios-orders';
 import Input from '../../../components/UI/Input/Input';
-import {connect} from 'react-redux';
+import { connect } from 'react-redux';
+import * as actionCreators from '../../../store/actions/index';
+import withErrorHandler from '../../../hoc/withErrorHandler/withErrorHandler';
+import { Redirect } from 'react-router-dom';
+import { updateObject, isInputValid } from '../../../shared/utility';
 
 class ContactInformation extends Component {
 
@@ -85,7 +89,7 @@ class ContactInformation extends Component {
                         { value: 'fast', displayValue: 'fast' }
                     ]
                 },
-                value: '',
+                value: 'cheap',
                 valid: true,
                 touched: false
             }
@@ -104,7 +108,6 @@ class ContactInformation extends Component {
 
     orderHandler = (event) => {
         event.preventDefault();
-        this.setState({ loading: true });
 
         const contactInformation = {};
         for (let key in this.state.orderForm)
@@ -113,50 +116,43 @@ class ContactInformation extends Component {
         const order = {
             ingredients: this.props.ingredients,
             price: this.props.totalPrice,
-            contactInformation: contactInformation
+            contactInformation: contactInformation,
+            UID: this.props.UID
         };
 
-        axios.post('/orders.json', order)
-            .then(response => {
-                this.setState({
-                    loading: false
-                });
-                this.props.history.push('/');
-            })
-            .catch(error => { this.setState({ loading: false }) });
-    }
-
-    isInputValid(value, validator) {
-        let isValid = true;
-
-        if (validator) {
-            if (validator.required) isValid = value.trim() !== '' && isValid;
-            if (validator.minLength) isValid = value.trim().length >= validator.minLength && isValid;
-            if (validator.maxLength) isValid = value.trim().length <= validator.minLength && isValid;
-        }
-
-        return isValid;
+        this.props.onBurgerPurchase(order, this.props.token);
     }
 
     inputChangedHandler = (elementID, event) => {
-        const updatedOrderForm = { ...this.state.orderForm };
-        const updatedFormElement = { ...updatedOrderForm[elementID] };
+        //const updatedOrderForm = { ...this.state.orderForm };
+        //const updatedFormElement = { ...updatedOrderForm[elementID] };
 
-        updatedFormElement.value = event.target.value;
-        updatedOrderForm[elementID] = updatedFormElement;
-        updatedFormElement.touched = true;
-        updatedFormElement.valid = this.isInputValid(updatedFormElement.value, updatedFormElement.validator);
+        //updatedFormElement.value = event.target.value;
+        //updatedFormElement.touched = true;
+        //updatedFormElement.valid = this.isInputValid(updatedFormElement.value, updatedFormElement.validator);
+        //updatedOrderForm[elementID] = updatedFormElement;
+
+        const updatedFormElement = updateObject(this.state.orderForm[elementID], {
+            value: event.target.value,
+            touched: true,
+            valid: isInputValid(event.target.value, this.state.orderForm[elementID].validator)
+        });
+
+        const updatedOrderForm = updateObject(this.state.orderForm, {
+            [elementID]: updatedFormElement
+        })
 
         let isFormValid = true;
-        for( let key in updatedOrderForm )
+        for (let key in updatedOrderForm)
             isFormValid = updatedOrderForm[key].valid && isFormValid;
-
-        console.log(isFormValid);
 
         this.setState({ orderForm: updatedOrderForm, isFormValid: isFormValid });
     };
 
     render() {
+        let purchased = this.props.purchased ? <Redirect to="/" /> : null;
+
+
         const formElements = [];
         for (let key in this.state.orderForm) {
             formElements.push({
@@ -167,6 +163,7 @@ class ContactInformation extends Component {
 
         return (
             <div className={css.ContactInformation}>
+                {purchased}
                 <h4> Contact information </h4>
                 <form onSubmit={this.orderHandler} >
                     {formElements.map(element => {
@@ -192,9 +189,19 @@ class ContactInformation extends Component {
 
 const mapStateToProps = state => {
     return {
-        ingredients: state.ingredients,
-        totalPrice: state.totalPrice
+        ingredients: state.burgerBuilder.ingredients,
+        totalPrice: state.burgerBuilder.totalPrice,
+        loading: state.order.loading,
+        purchased: state.order.purchased,
+        token : state.auth.token,
+        UID: state.auth.userId
     }
-}
+};
 
-export default connect(mapStateToProps)(ContactInformation);
+const mapDispatchToProps = dispatch => {
+    return {
+        onBurgerPurchase: (orderData, token) => dispatch(actionCreators.purchaseBurger(orderData, token))
+    }
+};
+
+export default connect(mapStateToProps, mapDispatchToProps)(withErrorHandler(ContactInformation, axios));

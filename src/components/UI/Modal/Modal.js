@@ -5,11 +5,6 @@ import css from './Modal.module.css';
 
 
 class Modal extends Component {
-
-    componentDidUpdate(){
-        console.log('Modal updated');
-    }
-
     shouldComponentUpdate(nextProps, nextState ) {
         return nextProps.display !== this.props.display || nextProps.children !== this.props.children;
     }
