@@ -1,39 +1,35 @@
-import React, { Component } from 'react';
+import React, { useState } from 'react';
 import Aux from '../../hoc/Aux';
 import css from './Layout.module.css';
 import Toolbar from '../Navigation/Toolbar/Toolbar';
 import SideDrawer from '../Navigation/SideDrawer/SideDrawer';
-import {connect} from 'react-redux';
+import { connect } from 'react-redux';
 
-class Layout extends Component {
+const Layout = (props) => {
 
-    state = {
-        displayBackdrop: false
-    };
+    const [displayBackdrop, setDisplayBackdrop] = useState(false);
 
-    sideDrawerClosedHandler = () => {
-        this.setState({ displayBackdrop: false })
+    const sideDrawerClosedHandler = () => {
+        setDisplayBackdrop(false);
     }
 
-    sideDrawerToggleHanler = () => {
-        this.setState( prevState => ({displayBackdrop: !prevState.displayBackdrop}) );
+    const sideDrawerToggleHanler = () => {
+        setDisplayBackdrop(!displayBackdrop);
     }
 
-    render() {
-        return (
-            <Aux>
-                <Toolbar isAuth={this.props.isAuthenticated} toggleDrawer={this.sideDrawerToggleHanler} />
-                <SideDrawer
-                    isAuth={this.props.isAuthenticated}
-                    display={this.state.displayBackdrop}
-                    backdropClick={this.sideDrawerClosedHandler}
-                />
-                <main className={css.Content}>
-                    {this.props.children}
-                </main>
-            </Aux>
-        );
-    }
+    return (
+        <Aux>
+            <Toolbar isAuth={props.isAuthenticated} toggleDrawer={sideDrawerToggleHanler} />
+            <SideDrawer
+                isAuth={props.isAuthenticated}
+                display={displayBackdrop}
+                backdropClick={sideDrawerClosedHandler}
+            />
+            <main className={css.Content}>
+                {props.children}
+            </main>
+        </Aux>
+    );
 }
 
 const mapStateToProps = state => {

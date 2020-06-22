@@ -1,60 +1,34 @@
-import React, { Component } from 'react';
+import React from 'react';
 import CheckoutSummary from '../../components/Order/CheckoutSummary/CheckoutSummary';
 import ContactInformation from './ContactInformation/ContactInformation';
 import { Route, Redirect } from 'react-router-dom';
 import { connect } from 'react-redux';
 
-class Checkout extends Component {
+const Checkout = props => {
 
-    state = {
-        ingredients: {
-            salad: 0,
-            meat: 0,
-            bacon: 0,
-            cheese: 0
-        }
+    const checkoutCancelled = () => {
+        props.history.goBack();
     }
 
-    componentDidMount() {
-        const query = new URLSearchParams(this.props.location.search);
-        let totalPrice;
-        const ingredients = {};
-        for (let ingredient of query.entries()) {
-            if (ingredient[0] === 'totalPrice') {
-                totalPrice = ingredient[1];
-                continue;
-            }
-
-            ingredients[ingredient[0]] = +ingredient[1];
-        };
-        this.setState({ ingredients: ingredients, totalPrice: totalPrice });
+    const checkoutContinued = () => {
+        props.history.push(`${props.match.path}/contactInformation`);
     }
 
-    checkoutCancelled = () => {
-        this.props.history.goBack();
+    let summary = <Redirect to='/' />
+    if (props.ingredients) {
+        summary = (
+            <div>
+                <CheckoutSummary
+                    checkoutCancelled={checkoutCancelled}
+                    checkoutContinued={checkoutContinued}
+                    ingredients={props.ingredients} />
+                <Route
+                    path={`${props.match.path}/contactInformation`}
+                    component={ContactInformation} />
+            </div>
+        )
     }
-
-    checkoutContinued = () => {
-        this.props.history.push(`${this.props.match.path}/contactInformation`);
-    }
-
-    render() {
-        let summary = <Redirect to='/' />
-        if (this.props.ingredients) {
-            summary = (
-                <div>
-                    <CheckoutSummary
-                        checkoutCancelled={this.checkoutCancelled}
-                        checkoutContinued={this.checkoutContinued}
-                        ingredients={this.props.ingredients} />
-                    <Route
-                        path={`${this.props.match.path}/contactInformation`}
-                        component={ContactInformation} />
-                </div>
-            )
-        }
-        return (summary);
-    }
+    return (summary);
 };
 
 const mapStateToProps = state => {
